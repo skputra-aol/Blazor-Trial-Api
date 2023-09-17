@@ -1,0 +1,71 @@
+﻿@page "/account/register"
+@inject IAccountService AccountService
+@inject IAlertService AlertService
+@inject NavigationManager NavigationManager
+
+<div class="card">
+    <h4 class="card-header">Register</h4>
+    <div class="card-body">
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <label>First Name</label>
+                <InputText @bind-Value="model.firstName" class="form-control" />
+                <ValidationMessage For="@(() => model.firstName)" />
+            </div>
+            <div class="form-group">
+                <label>Last Name</label>
+                <InputText @bind-Value="model.lastName" class="form-control" />
+                <ValidationMessage For="@(() => model.lastName)" />
+            </div>
+            <div class="form-group">
+                <label>email</label>
+                <InputText @bind-Value="model.email" class="form-control" />
+                <ValidationMessage For="@(() => model.email)" />
+            </div>
+            <div class="form-group">
+                <label>password</label>
+                <InputText @bind-Value="model.password" type="password" class="form-control" />
+                <ValidationMessage For="@(() => model.password)" />
+            </div>
+            <div class="form-group">
+                <label>password</label>
+                <InputText @bind-Value="model.repeatPassword" type="password" class="form-control" />
+                <ValidationMessage For="@(() => model.repeatPassword)" />
+            </div>
+            <button disabled="@loading" class="btn btn-primary">
+                @if (loading) 
+                {
+                    <span class="spinner-border spinner-border-sm mr-1"></span>
+                }
+                Register
+            </button>
+            <NavLink href="account/login" class="btn btn-link">Cancel</NavLink>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private AddUser model = new AddUser();
+    private bool loading;
+
+    private async void OnValidSubmit()
+    {
+        // reset alerts on submit
+        AlertService.Clear();
+        
+        loading = true;
+        try
+        {
+            await AccountService.Register(model);
+            AlertService.Success("Registration successful", keepAfterRouteChange: true);
+            NavigationManager.NavigateTo("account/login");
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error("Failed");
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,12 @@
+﻿@page "/"
+@attribute [Authorize]
+@inject IAccountService AccountService
+
+<div class="p-4">
+        <h2>Account Name : @AccountService.User.email</h2>
+        <h4>Welcome to this Homepage</h4><br>
+        <h5>You can click on Above Menu for showing manage User and Organizers Page.</h5>
+        <hr/><br/>
+         <NavLink href="users/password" class="btn btn-sm btn-primary mr-1">Change Password</NavLink>
+
+</div>

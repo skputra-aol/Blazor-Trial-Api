@@ -1,0 +1,54 @@
+﻿@page "/organizers/add"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject IOrganizerService OrganizerService
+@inject NavigationManager NavigationManager
+
+<h1>Add Organizer</h1>
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="form-row">
+        <div class="form-group col">
+            <label>Organizer Name</label>
+            <InputText @bind-Value="model.organizerName" class="form-control" />
+            <ValidationMessage For="@(() => model.organizerName)" />
+        </div>
+        <div class="form-group col">
+            <label>Image Location</label>
+            <InputText @bind-Value="model.imageLocation" class="form-control" />
+            <ValidationMessage For="@(() => model.imageLocation)" />
+        </div>
+    </div>
+       <div class="form-group">
+        <button disabled="@loading" class="btn btn-primary">
+            @if (loading) 
+            {
+                <span class="spinner-border spinner-border-sm mr-1"></span>
+            }
+            Save
+        </button>
+        <NavLink href="organizers" class="btn btn-link">Cancel</NavLink>
+    </div>
+</EditForm>
+
+@code {
+    private AddOrganizer model = new AddOrganizer();
+    private bool loading;
+
+    private async void OnValidSubmit()
+    {
+        loading = true;
+        try
+        {
+            await OrganizerService.Register(model);
+            AlertService.Success("Organizer added successfully", keepAfterRouteChange: true);
+            NavigationManager.NavigateTo("organizers");
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error("Failed");
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,136 @@
+﻿@page "/organizers"
+@attribute [Authorize]
+@inject HttpClient Http
+@using BlazorApp.Shared
+@using System.Text.Json
+@using System.Threading
+@inject IOrganizerService OrganizerService
+@inject IAlertService AlertService
+@inject NavigationManager NavigationManager
+@inject IMapper Mapper
+
+
+<Confirm @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+         ConfirmationMessage=@($"Are you sure you want to delete for ID \"{currentKey}\"?")>
+</Confirm>
+        @if (loading)
+        {<table>
+            <tr>
+                <td colspan="4" class="text-center">
+                    <span class="spinner-border spinner-border-lg align-center"></span>
+                </td>
+            </tr>
+            </table>
+        }
+<MudText Typo="Typo.h3" GutterBottom="true" Class="tableTitle"><h2>Organizers List</h2></MudText><hr/>
+
+<MudTable ServerData="@(new Func<TableState, Task<TableData<OrganizerDto>>>(GetServerData))"
+          Hover="true" Breakpoint="Breakpoint.Sm" RightAlignSmall="true" 
+          @ref="_table" RowsPerPage="@perPage">
+    <HeaderContent>
+        <MudTh Class="tableHeader">ID</MudTh>
+        <MudTh Class="tableHeader">Photo Image</MudTh>
+        <MudTh Class="tableHeader">Organizer Name</MudTh>
+        <MudTh Class="tableHeader">Image Location</MudTh>
+        <MudTh Class="tableHeader"></MudTh>
+
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.id</MudTd>
+        <MudTd DataLabel="Image">
+            <MudAvatar  Color="Color.Warning"  Bordered="true" Image="@context.imglocation" Class="rounded-lg"/>
+        </MudTd>
+        <MudTd DataLabel="organizerName">@context.name</MudTd>
+        <MudTd DataLabel="imageLocation">@context.imglocation</MudTd>
+        <MudTd DataLabel="command">
+                                <NavLink href="@($"organizers/edit/{context.id}")" class="btn btn-sm btn-primary mr-1">Edit</NavLink>
+                        <button @onclick="@(() => Delete_Click(context.id.ToString()))" class="btn btn-sm btn-danger btn-delete-organizer">
+                        <span>Delete</span>
+                        </button>
+                        </MudTd>
+    </RowTemplate>
+    <PagerContent><b>
+        <MudTablePager DisableRowsPerPage="true" PageSizeOptions="@_pageSizeOption" RowsPerPageString="Show Count" /> 
+    </b>
+    </PagerContent>
+    
+</MudTable>
+
+@code {
+    private bool loading;
+    private int perPage=5;
+    private string currentKey="";
+
+    private MudTable<OrganizerDto> _table;
+    private readonly int[] _pageSizeOption = { 5, 10, 15, 20};
+
+    private void Delete_Click(string id) 
+    {
+        currentKey=id;
+        DeleteConfirmation.Show();
+    }
+    private async void DeleteOrganizer(string id) 
+    {
+        try
+        {
+            // call delete API
+            await OrganizerService.Delete(id);
+            AlertService.Success("Data has been Deleted Successfully");
+            var timer = new Timer(new TimerCallback(_ =>
+            {
+                NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+            }), null, 2000, 2000);
+        }
+        catch (Exception ex)
+        {
+            // show erro rmessage
+            AlertService.Error("Failed");
+            StateHasChanged();
+        }
+
+    }
+
+    protected ConfirmBase DeleteConfirmation { get; set; }
+
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if(deleteConfirmed)
+        {
+
+            DeleteOrganizer(currentKey);
+        }
+    }
+    private async Task<TableData<OrganizerDto>> GetServerData(TableState state)
+    {
+        loading=true;
+        //calculate page number
+        int pageSize = state.PageSize;
+        int pageNumber = state.Page + 1;
+
+        
+        PagingResponse<Organizer> respon= new PagingResponse<Organizer>();
+        TableData<OrganizerDto> Data= new TableData<OrganizerDto>();
+		try
+		{
+            // Get data from API
+			 respon = await OrganizerService.GetAll(pageNumber, pageSize); 
+
+		}
+		catch (Exception ex)
+		{
+            //show error message
+            AlertService.Error("Failed");
+            loading=false;
+		}
+        loading=false;
+
+        return new TableData<OrganizerDto>
+        { 
+            // return pagination data
+            Items = Mapper.Map<OrganizerDto[]>(respon.data),
+            TotalItems = respon.meta.pagination.total
+        };
+    }
+    
+
+}

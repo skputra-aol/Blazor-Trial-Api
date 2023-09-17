@@ -1,0 +1,16 @@
+﻿@page "/account/logout"
+@page "/account/logout/{info}"
+@layout MainLayout
+@inject IAccountService AccountService
+
+
+
+@code {
+
+    [Parameter]
+    public string info {get; set;}
+    protected override async void OnInitialized()
+    {
+        await AccountService.Logout(info);
+    }
+}
